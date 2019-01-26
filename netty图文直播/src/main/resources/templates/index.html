@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>直播房间选择</title>
+    <style type="text/css">
+
+        .div-levelCenter {
+            margin: 0 auto;
+            width: 525px;
+            height: 300px;
+            border: 1px solid #F00; /*能标记出在页面中的位置和区域 */
+        }
+
+        .div-levelCenter .img-div {
+            /*
+            display 设置 inline-block 、inline 都能水平并排展示。
+            设置 inline-block 时，可以修改盒子的width、height；
+            设置 inline 时是根据盒子里的内容的width、height来决定，且直接修改盒子width、height无效。
+            */
+            /*display:inline;*/
+            display: inline-block;
+            float: left;
+            padding: 5px;
+            border: 1px solid #009A61;
+        }
+
+        .div-levelCenter .img-div .img-div-imgSize {
+            width: 250px;
+            height: 250px;
+
+        }
+
+    </style>
+</head>
+
+<body>
+<div class="div-levelCenter">
+    <div class="img-div">
+        <a class="img-div-imgSize" href="websocket.html">直播房间1</a>
+    </div>
+    <div class="img-div">
+        <a class="img-div-imgSize" href="websocket1.html">直播房间2</a>
+    </div>
+</div>
+</body>
+</html>
