@@ -8,13 +8,19 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.*;
+import io.netty.handler.stream.ChunkedFile;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 
 import javax.imageio.ImageIO;
 import javax.xml.bind.DatatypeConverter;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
@@ -112,36 +118,86 @@ public class MyWebSocketHandler extends SimpleChannelInboundHandler<Object> {
         //群发，服务端向每个连接上来的客户端群发消息
         //NettyConfig.group.writeAndFlush(tws);
         String msg = ((TextWebSocketFrame) frame).text();
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HHmmss");
+        String name = formatter.format(new Date()) + "-" + UUID.randomUUID().toString();
         Mage mage = new Mage();
-        try {
-            //解析用户发送的消息
-            mage = mage.strChangeToMage(msg);
-            if (mage.isCount()) {
-                //concurrentHashMap.put(mage.getName(),ctx);
-                if (NettyConfig.homeMap.containsKey(mage.getHomeid())) {
-                    channelGroup = NettyConfig.homeMap.get(mage.getHomeid());
-                } else {
-                    channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
-                }
-                channelGroup.add(ctx.channel());
-                //System.out.println(channelGroup.size());
-                NettyConfig.homeMap.put(mage.getHomeid(), channelGroup);
-            } else {
-                TextWebSocketFrame tws = new TextWebSocketFrame(mage.getName() + " ===>>>" + mage.getMsg());
-                channelGroup = NettyConfig.homeMap.get(mage.getHomeid());
-                //System.out.println(channelGroup.size());
-                channelGroup.writeAndFlush(tws);
-            }
-        } catch (Exception e) {
-            /*System.out.println("接收的信息无法被服务端解析" + msg);
-            ctx.close();
-            e.printStackTrace();*/
+        //解析用户发送的消息
+        int strEndIndex = msg.indexOf("data");
+        if (strEndIndex!=-1) {
+            String homeId=msg.substring(0,strEndIndex);
+            msg=msg.substring(strEndIndex,msg.length());
+            System.out.println(homeId);
             byte[] imagedata = DatatypeConverter.parseBase64Binary(msg.substring(msg.indexOf(",") + 1));
             BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(imagedata));
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HHmmss");
-            String name = formatter.format(new Date()) + "-" + UUID.randomUUID().toString();
-            ImageIO.write(bufferedImage, "png", new File("D:\\netty项目照片\\" + name + ".png"));
+            ImageIO.write(bufferedImage, "png", new File("D:\\nginx-1.14.2\\html\\netty项目照片\\image\\" + name + ".png"));
+            TextWebSocketFrame tws = new TextWebSocketFrame("http://127.0.0.1/image/"+name+".png");
+            channelGroup = NettyConfig.homeMap.get(homeId);
+            channelGroup.writeAndFlush(tws);
+            /*File file = new File("D:\\netty项目照片\\" + name + ".png");
+            FileInputStream fis = new FileInputStream(file);
+            int count = 0;
+            int readLength = 8;
+            for (;;) {
+                BufferedInputStream bis = new BufferedInputStream(fis);
+                byte[] bytes = new byte[readLength];
+                int readNum = bis.read(bytes, 0, readLength);
+                if (readNum == -1) {
+                    return;
+                }
+                ChannelBuffer buffer = ChannelBuffers.copiedBuffer(bytes, 0, readNum);
+                ctx.channel().write(buffer);
+                System.out.println("Send count: " + ++count);
+            }*/
+            /*RandomAccessFile randomAccessFile = new RandomAccessFile("D:\\netty项目照片\\" + name + ".png", "rw");
+            FileChannel channel = randomAccessFile.getChannel();
+            ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+            int i = channel.read(byteBuffer);
+            channel.force(true);
+            ctx.write("123".getBytes());
+            while (i != -1) {
+                System.out.println("READ:"+i);
+                byteBuffer.flip();
+                while (byteBuffer.hasRemaining()) {
+                    //ctx.writeAndFlush(byteBuffer);
+                    //ctx.writeAndFlush(msg);
+                    //System.out.print((char)byteBuffer.get());
+                    //ctx.channel().write(byteBuffer.get());
+
+                }
+                ByteBuf byteBuf=Unpooled.buffer();
+                byteBuf.writeBytes(byteBuffer);
+                BinaryWebSocketFrame binaryWebSocketFrame=new BinaryWebSocketFrame(byteBuf);
+                ctx.writeAndFlush(binaryWebSocketFrame);
+                byteBuffer.clear();
+                byteBuf.clear();
+                i = channel.read(byteBuffer);
+            }*/
+        } else {
+            try {
+                mage = mage.strChangeToMage(msg);
+                if (mage.isCount()) {
+                    //concurrentHashMap.put(mage.getName(),ctx);
+                    if (NettyConfig.homeMap.containsKey(mage.getHomeid())) {
+                        channelGroup = NettyConfig.homeMap.get(mage.getHomeid());
+                    } else {
+                        channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+                    }
+                    channelGroup.add(ctx.channel());
+                    //System.out.println(channelGroup.size());
+                    NettyConfig.homeMap.put(mage.getHomeid(), channelGroup);
+                } else {
+                    TextWebSocketFrame tws = new TextWebSocketFrame(mage.getName() + " ===>>>" + mage.getMsg());
+                    channelGroup = NettyConfig.homeMap.get(mage.getHomeid());
+                    //System.out.println(channelGroup.size());
+                    channelGroup.writeAndFlush(tws);
+                }
+            } catch (Exception e) {
+                System.out.println("接收的信息无法被服务端解析" + msg);
+                ctx.close();
+                e.printStackTrace();
+            }
         }
+
     }
 
     /**

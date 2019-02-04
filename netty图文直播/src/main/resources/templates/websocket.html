@@ -2,6 +2,35 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset = utf-8"/>
     <title>直播房间1</title>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.4.1.min.js"></script>
+    <style>
+        #responseContent{
+            -webkit-box-flex: 1;
+            overflow-y: scroll;
+        }
+
+        #responseContent::-webkit-scrollbar{
+            width: 15px;
+        }
+        #responseContent ul{
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        #responseContent li{
+            width: 100%;
+            height: 50px;
+            /*display: -webkit-box;
+            -webkit-box-orient: horizontal;*/
+            margin-top: 10px;
+        }
+
+        .conRight{
+            -webkit-box-flex: 1;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+        }
+    </style>
     <script type="text/javascript">
         var arr = ["大鸡腿", "123", "我是好人", "班主任", "小贱贱"
         ];
@@ -17,12 +46,49 @@
             socket.onmessage = function (event) {
                 var ta = document.getElementById('responseContent');
                 console.log(event);
-                ta.value += event.data + "\r\n";
+                var fdStart = event.data.indexOf("http://");
+                if (fdStart == 0) {
+                    /*var str='';
+                    str+='<li>'+
+                        '<div class="nesHead"><img src="img/6.jpg"/></div>'+
+                        '<div class="news"><img src=\'+event.data+\'></div>'+
+                        '</li>';
+                    $('.newsList').append(str);
+                    $('.responseContent').scrollTop($('.responseContent')[0].scrollHeight );*/
+                    var img = new Image();
+                    img.onload = function () {
+                        alert("img is loaded")
+                    };
+                    img.onerror = function () {
+                        alert("error!")
+                    };
+                    img.src = event.data;
+                    img.width = 200;
+                    img.height = 200;
+
+                    function show() {
+                        alert("body is loaded");
+                    };
+                    $('.newsList').append(img);
+                    $('#responseContent').scrollTop($('#responseContent')[0].scrollHeight);
+                    return;
+                } else if (fdStart == -1) {
+
+                }
+                var str = '';
+                str += '<li>' +
+                    '<div class="news"><font>' + event.data + '</font></div>' +
+                    '</li>';
+                $('.newsList').append(str);
+                //ta.value += event.data + "\r\n";
             };
 
             socket.onopen = function (event) {
-                var ta = document.getElementById('responseContent');
-                ta.value = "你当前的浏览器支持WebSocket,请进行后续操作\r\n";
+                var str = '';
+                str += '<li>' +
+                    '<div class="news"><font>你当前的浏览器支持WebSocket,请进行后续操作</font></div>' +
+                    '</li>';
+                $('.newsList').append(str);
                 var jsObj = {};
                 jsObj.name = name;
                 jsObj.homeid = '1';
@@ -32,9 +98,11 @@
             };
 
             socket.onclose = function (event) {
-                var ta = document.getElementById('responseContent');
-                ta.value = "";
-                ta.value = "WebSocket连接已经关闭\r\n";
+                var str = '';
+                str += '<li>' +
+                    '<div class="news"><font>WebSocket连接已经关闭</font></div>' +
+                    '</li>';
+                $('.newsList').append(str);
             };
         } else {
             alert("您的浏览器不支持WebSocket");
@@ -71,10 +139,15 @@
             }
             var file = files[0];
             var reader = new FileReader();
+            var jsObj = "1";
             reader.onload = function () {
-                send(this.result);
+                send(jsObj+this.result);
             };
             reader.readAsDataURL(file);
+            var file = document.getElementById('file');
+            file.value = ''; //虽然file的value不能设为有字符的值，但是可以设置为空值
+//或者
+            file.outerHTML = file.outerHTML;
         }
     </script>
 </head>
@@ -87,7 +160,13 @@
            accept="image/jpg,image/jpeg,image/png,image/PNG">
     <hr color="red"/>
     <h2>客户端接收到服务端返回的应答消息</h2>
-    <textarea id="responseContent" style="width:1024px; height:300px"></textarea>
+    <div class="conRight">
+        <div id="responseContent" style="width:1024px; height:300px ;border:1px solid #F00">
+            <ul class="newsList">
+
+            </ul>
+        </div>
+    </div>
 </form>
 </body>
 </html>
