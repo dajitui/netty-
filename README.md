@@ -1,3 +1,7 @@
 # netty-
-只是实现了2个直播间，然后可以进行文字通讯，图片的话暂时只能上传，如果哪位大牛可以帮忙实现下载的话，呼我一声，谢谢。
-其次图片在D：//netty图文直播,没有的自己创建
+只是实现了2个直播间，然后可以进行文字通讯，图片的话上传保存到本地D:\nginx-1.14.2\html\netty项目照片\image，使用nginx映射。
+
+nginx.conf
+location /image {
+            root   D:/nginx-1.14.2/html/netty项目照片;
+        }
